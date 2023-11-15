@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
                     byte[] bytes = byteArrayOutputStream.toByteArray();
                     final String base64Image = Base64.encodeToString(bytes, Base64.DEFAULT);
-                    RequestQueue queue = Volley
+                    RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
                 }
                 else Toast.makeText(MainActivity.this, "Select the image first", Toast.LENGTH_SHORT).show();
             }
