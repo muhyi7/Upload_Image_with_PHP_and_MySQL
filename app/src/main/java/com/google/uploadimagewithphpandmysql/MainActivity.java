@@ -16,19 +16,14 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
 import android.util.Base64;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -37,8 +32,8 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 public class MainActivity extends AppCompatActivity {
-
     Bitmap bitmap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,18 +45,11 @@ public class MainActivity extends AppCompatActivity {
                 registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
                     @Override
                     public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == Activity.RESULT_OK){
+                        if (result.getResultCode() == Activity.RESULT_OK) {
                             Bundle extras = result.getData().getExtras();
                             Bitmap imageBitmap = (Bitmap) extras.get("data");
                             imageView.setImageBitmap(imageBitmap);
-//                            Intent data = result.getData();
-//                            Uri uri = data.getData();
-//                            try {
-//                                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-//                                imageView.setImageBitmap(bitmap);
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
+                            bitmap = imageBitmap; // Simpan gambar yang dipilih
                         }
                     }
                 });
@@ -71,9 +59,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 activityResultLauncher.launch(intent);
-//                Intent intent = new Intent(Intent.ACTION_PICK);
-//                intent.setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-//                activityResultLauncher.launch(intent);
             }
         });
 
@@ -82,35 +67,43 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 ByteArrayOutputStream byteArrayOutputStream;
                 byteArrayOutputStream = new ByteArrayOutputStream();
-                if (bitmap != null){
+                if (bitmap != null) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
                     byte[] bytes = byteArrayOutputStream.toByteArray();
                     final String base64Image = Base64.encodeToString(bytes, Base64.DEFAULT);
+
                     RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-                    String url = "";
+                    String url = "http://10.10.4.62/Upload-Image-Android/upload.php";
 
                     StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                             new Response.Listener<String>() {
                                 @Override
                                 public void onResponse(String response) {
-
+                                    if (response.equals("success")) {
+                                        Toast.makeText(getApplicationContext(), "Image uploaded", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(getApplicationContext(), "Failed to upload image ", Toast.LENGTH_LONG).show();
+                                    }
                                 }
                             }, new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-
+                            Toast.makeText(getApplicationContext(), error.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                         }
-                    }){
+                    }) {
                         @Nullable
                         @Override
-                        protected Map<String, String> getParams(){
+                        protected Map<String, String> getParams() {
                             Map<String, String> paramV = new HashMap<>();
-                            paramV.put("param", "abc");
+                            paramV.put("image", base64Image);
                             return paramV;
                         }
                     };
+
+                    queue.add(stringRequest);
+                } else {
+                    Toast.makeText(MainActivity.this, "Select the image first", Toast.LENGTH_SHORT).show();
                 }
-                else Toast.makeText(MainActivity.this, "Select the image first", Toast.LENGTH_SHORT).show();
             }
         });
     }
